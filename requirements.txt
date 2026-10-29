@@ -7,3 +7,4 @@ pypdf>=4.0
 pydantic>=2.0
 langfuse>=3.0
 pytest>=8
+fastembed==0.9.1  # local embeddings for search.py
