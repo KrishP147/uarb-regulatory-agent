@@ -1,0 +1,6 @@
+.env
+downloads/
+__pycache__/
+.pytest_cache/
+.git/
+*.log
