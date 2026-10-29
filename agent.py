@@ -295,6 +295,14 @@ async def _handle(client, msg, sender, address):
             delivery = f"The ZIP is {mb}, over the email size limit, so I couldn't attach it."
     summary = await asyncio.to_thread(brief, r["meta"], r["docs"])
     await reply(compose(name, r, delivery, summary), attachments=attachments or None)
+    try:  # index for cross-matter search before the files go; never blocks the reply (already sent)
+        from search import index_matter
+        with lf.start_as_current_observation(as_type="tool", name="index-for-search") as span:
+            n = await asyncio.to_thread(index_matter, r, out)
+            span.update(output={"chunks": n})
+        print(f"  indexed {n} chunks")
+    except Exception as e:
+        print("  index failed:", type(e).__name__, e)
     shutil.rmtree(out, ignore_errors=True)  # sent (and stored in S3 if big); keep the server disk flat
     for z in out.parent.glob(f"{matter} *.zip"):
         z.unlink(missing_ok=True)
