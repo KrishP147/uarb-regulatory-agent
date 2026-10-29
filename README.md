@@ -102,7 +102,7 @@ Direction, not built. Each item says what it is today and what would replace it.
 
 ## Searching across matters
 
-The challenge frames this agent as the data ingestion side of a Regulatory Agent: the searchable database under its research, where an analyst looks for examples, precedents and approval patterns in past cases. `search.py` is that layer. It indexes every scraped matter (the saved metadata plus the text of the downloaded filings) into a local database, so one question can be asked across all matters at once instead of one email per matter. The agent indexes every matter it fetches once the one-line hook in `agent.py` (`search.index_matter(r, out)`, before the download folder is deleted) is wired.
+The challenge frames this agent as the data ingestion side of a Regulatory Agent: the searchable database under its research, where an analyst looks for examples, precedents and approval patterns in past cases. `search.py` is that layer. It indexes every scraped matter (the saved metadata plus the text of the downloaded filings) into a local database, so one question can be asked across all matters at once instead of one email per matter. The agent indexes every matter it fetches, right before the download folder is deleted.
 
 ```bash
 python search.py index downloads/M12205_1793235393   # a saved matter folder, or its M12205.json
