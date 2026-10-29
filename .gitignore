@@ -4,3 +4,7 @@ probe/
 __pycache__/
 .pytest_cache/
 *.log
+*.pem
+*.zip
+.venv/
+skilleddocs/
