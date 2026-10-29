@@ -4,3 +4,8 @@ __pycache__/
 .pytest_cache/
 .git/
 *.log
+probe/
+*.pem
+*.zip
+.venv/
+skilleddocs/
