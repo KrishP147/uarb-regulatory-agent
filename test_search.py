@@ -74,3 +74,19 @@ def test_answer_without_key_returns_cited_excerpts(matter):
     text = search.answer("water main replacement capital expenditure")
     assert text.startswith("[M99999 · 01 Board Order (11111) p.1]")
     assert "water main replacement" in text
+
+
+def test_recording_transcript_indexed_audio_skipped(matter):
+    result, out = matter
+    (out / "Recordings").mkdir()
+    audio = out / "Recordings" / "01 Hearing Day 1 (33333).mp3"
+    audio.write_bytes(b"ID3 not really audio")
+    (out / "Recordings" / "01 Hearing Day 1 (33333).transcript.txt").write_text("Counsel argued the rate rebasing")
+    result["docs"]["Recordings"] = [
+        {"path": audio, "title": "Hearing Day 1", "date": "02/01/2026", "doc_no": "33333",
+         "transcript": audio.with_name(audio.stem + ".transcript.txt")},
+        {"path": "02 Hearing Day 2 (44444).mp3", "title": "Hearing Day 2", "date": "02/02/2026", "doc_no": "44444"}]
+    (out / "Recordings" / "02 Hearing Day 2 (44444).mp3").write_bytes(b"ID3")
+    assert search.index_matter(result, out) == 4  # metadata + pdf + txt + one transcript, no audio
+    top = search.search("counsel rate rebasing")[0]
+    assert top["doc_type"] == "Recordings" and top["doc_no"] == "33333"

@@ -90,8 +90,9 @@ def index_matter(result: dict, out_dir: Path) -> int:
                  date=meta.get("date_received", ""), label="matter record", page=0, text=summary)]
     for doc_type, docs in result.get("docs", {}).items():
         for d in docs:
-            path = _resolve(d["path"], doc_type, out_dir)
-            if not path.is_file():
+            # Recordings carry a transcript .txt next to the audio; never read the audio itself
+            path = _resolve(d.get("transcript") or d["path"], doc_type, out_dir)
+            if not path.is_file() or path.suffix.lower() not in (".pdf", ".txt"):
                 continue
             try:
                 pages = _pages(path)
