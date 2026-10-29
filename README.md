@@ -78,3 +78,31 @@ See `.env.example`. Only AgentMail is required. Claude (request parsing and summ
 - It downloads the first 10 documents in the order the site lists them.
 - "Initial filing" and "final filing" use the site's Date Received and Decision Date fields.
 - The UARB site prepares large PDFs slowly, so a request for big exhibits can take several minutes. The agent replies right away to say it's working on it.
+
+## Searching across matters
+
+The challenge frames this agent as the data ingestion side of a Regulatory Agent: the searchable database under its research, where an analyst looks for examples, precedents and approval patterns in past cases. `search.py` is that layer. It indexes every scraped matter (the saved metadata plus the text of the downloaded filings) into a local database, so one question can be asked across all matters at once instead of one email per matter. The agent indexes every matter it fetches once the one-line hook in `agent.py` (`search.index_matter(r, out)`, before the download folder is deleted) is wired.
+
+```bash
+python search.py index downloads/M12205_1793235393   # a saved matter folder, or its M12205.json
+python search.py "what did the Board decide about the Windsor Street Exchange costs?"
+python search.py --matters                           # indexed matters and chunk counts
+```
+
+Real output on the M12205 filings (no `ANTHROPIC_API_KEY` set, so it prints the ranked excerpts; with a key, Claude writes a short answer that cites them the same way):
+
+```
+[M12205 · 06 Board Order (102674) p.1] (07/08/2026)
+Document: 325280 ORDER M12205 NOVA SCOTIA REGULATORY AND APPEALS BOARD ... Halifax Water applied to the
+Board for approval of the Windsor Street Exchange Redevelopment Project - Construction for a cost of
+$64,769,000. In its Decision dated October 23, 2025, the Board approved the project with the changes
+directed in the Decision, subject to a Compliance Filing ...
+
+[M12205 · 02 Hearing Order (97291) p.1] (04/11/2025)
+...
+```
+
+How it works:
+- Each filing's first 30 pages are split into overlapping 800-character chunks, plus one chunk per matter for its metadata (title, type, category, status, counts).
+- Chunks are embedded locally with fastembed (`BAAI/bge-small-en-v1.5`, no API key) and stored in SQLite at `downloads/search.db` (or `SEARCH_DB`).
+- A question is embedded the same way and ranked by cosine similarity; Claude answers only from the top excerpts and cites each fact as `[M12205 · 02 Board Order (102674) p.3]`.
