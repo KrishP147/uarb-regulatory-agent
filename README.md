@@ -4,6 +4,8 @@ An email agent for Nova Scotia Utility and Review Board (UARB) filings. Email it
 
 **Try it:** email **krish-uarb-agent@agentmail.to**
 
+**Demo video (5 min):** [watch on Loom](https://www.loom.com/share/b3c7958d6a4f4b5fb8caff52e2df6b3c)
+
 > **You:** Hi Agent, can you give me Other Documents files from M12205? Thanks!
 >
 > **Agent** (a few seconds later): On it: pulling Other Documents for M12205 from the UARB database...
