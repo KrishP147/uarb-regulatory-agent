@@ -143,7 +143,8 @@ def make_zip(docs: dict, zip_path: Path) -> Path:
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
         for t, items in docs.items():
             for d in items:
-                z.write(d["path"], f"{t}/{d['path'].name}" if len(docs) > 1 else d["path"].name)
+                for f in [d["path"]] + ([d["transcript"]] if d.get("transcript") else []):
+                    z.write(f, f"{t}/{f.name}" if len(docs) > 1 else f.name)
     return zip_path
 
 

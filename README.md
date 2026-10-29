@@ -30,6 +30,7 @@ An email agent for Nova Scotia Utility and Review Board (UARB) filings. Email it
 | **Follow-ups** | Reply "Exhibits please" in the same thread and it remembers the matter. Reply "retry" to re-run a failed download |
 | **Large files** | ZIPs that fit are attached. Bigger ones (Exhibits can exceed 100 MB) come as a private 7-day download link |
 | **Readable output** | Files are named by title and document number (`05 Board Decision (99761).pdf`), with a dated list of contents in the email |
+| **Hearing recordings** | Recordings (full hearing days, often 300 MB+ of audio each) are transcribed with Deepgram. The ZIP includes a speaker-labelled transcript next to each recording |
 | **Document summary** | Claude reads the first pages of the downloaded filings and summarizes them in 2-3 sentences. It uses only facts stated in the text |
 | **Errors** | Unknown matter numbers, unclear requests, and failed downloads each get a clear reply instead of silence |
 

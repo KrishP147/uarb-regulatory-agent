@@ -12,6 +12,7 @@ from typing import List, Literal, Optional
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
+from transcribe import transcribe_all
 from uarb import DOC_TYPES, fetch, make_zip
 
 load_dotenv()
@@ -103,11 +104,13 @@ def brief(meta, docs) -> str:
         import anthropic
         excerpts = []
         for d in [d for items in docs.values() for d in items][:6]:
-            if d["path"].suffix.lower() != ".pdf":
-                continue
             try:
-                pages = PdfReader(d["path"]).pages[:2]
-                text = " ".join((p.extract_text() or "") for p in pages)
+                if d.get("transcript"):  # hearing audio: use the opening of its transcript
+                    text = d["transcript"].read_text(encoding="utf-8")[:3000]
+                elif d["path"].suffix.lower() == ".pdf":
+                    text = " ".join((p.extract_text() or "") for p in PdfReader(d["path"]).pages[:2])
+                else:
+                    continue
             except Exception:
                 continue
             excerpts.append(f"## {d['title']} ({d['date']})\n{re.sub(r'\s+', ' ', text)[:1500]}")
@@ -196,7 +199,8 @@ def compose(name, r, delivery: str, summary: str = "") -> str:
             if items and len(r["doc_types"]) > 1:
                 lines.append(f"{t}:")
             for d in items:
-                lines.append(f"  {d['path'].name}" + (f"  ({d['date']})" if d["date"] else ""))
+                lines.append(f"  {d['path'].name}" + (f"  ({d['date']})" if d["date"] else "")
+                             + (" + written transcript" if d.get("transcript") else ""))
     if r["errors"]:
         lines += ["", "I couldn't download: " + "; ".join(r["errors"]) + ". Reply \"retry\" and I'll try again."]
     lines += ["", "Want something else? Reply with another matter number or document type.", "", SIGN]
@@ -242,8 +246,11 @@ async def _handle(client, msg, sender, address):
         await reply(f"Hi {name},\n\n{ask}\n\n{SIGN}")
         return {"result": "asked_for_clarification", "question": ask}
 
+    wait = ("Recordings are full hearing audio (often 300 MB+ each), so this can take up to an hour. "
+            "I'll include a written transcript of each one." if "Recordings" in types else
+            "That usually takes 1-3 minutes (longer for large exhibits).")
     await reply(f"Hi {name},\n\nOn it: pulling {', '.join(types)} for {matter} from the UARB database. "
-                "That usually takes 1-3 minutes (longer for large exhibits). I'll reply here with the ZIP.\n\n" + SIGN)
+                f"{wait} I'll reply here with the ZIP.\n\n" + SIGN)
     out = DATA / f"{matter}_{int(time.time())}"
     try:
         with lf.start_as_current_observation(as_type="tool", name="uarb-scrape",
@@ -251,6 +258,11 @@ async def _handle(client, msg, sender, address):
             r = await fetch(matter, types, out)
             span.update(output={"meta": r["meta"], "counts": r["counts"], "errors": r["errors"],
                                 "downloaded": {t: [d["path"].name for d in v] for t, v in r["docs"].items()}})
+        if r["docs"].get("Recordings"):
+            with lf.start_as_current_observation(as_type="tool", name="transcribe-recordings",
+                                                 input=[d["path"].name for d in r["docs"]["Recordings"]]) as span:
+                r["errors"] += await asyncio.to_thread(transcribe_all, r["docs"]["Recordings"])
+                span.update(output=[d["transcript"].name for d in r["docs"]["Recordings"] if d.get("transcript")])
     except LookupError:
         await reply(f"Hi {name},\n\nI couldn't find {matter} in the UARB public database. Could you double-check "
                     "the matter number? It should be an M followed by 5 digits.\n\n" + SIGN)
@@ -259,7 +271,8 @@ async def _handle(client, msg, sender, address):
     # keep the scraped record: the seed of a searchable matter database
     (DATA / f"{matter}.json").write_text(json.dumps(
         {**{k: v for k, v in r.items() if k != "docs"},
-         "docs": {t: [{**d, "path": d["path"].name} for d in v] for t, v in r["docs"].items()},
+         "docs": {t: [{**d, "path": d["path"].name, **({"transcript": d["transcript"].name} if d.get("transcript") else {})}
+                      for d in v] for t, v in r["docs"].items()},
          "fetched_at": datetime.now().isoformat(timespec="seconds")}, indent=2))
 
     attachments, delivery = [], ""
