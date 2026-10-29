@@ -30,8 +30,9 @@ def _embed(texts: list) -> np.ndarray:
     global _embedder
     if _embedder is None:
         from fastembed import TextEmbedding
-        _embedder = TextEmbedding(EMBED_MODEL)
-    v = np.array(list(_embedder.embed(texts)), dtype=np.float32)
+        _embedder = TextEmbedding(EMBED_MODEL, threads=2)
+    # small batches: the default (256) peaks at ~1.5 GB RAM, which OOM-killed the 2 GB server
+    v = np.array(list(_embedder.embed(texts, batch_size=16)), dtype=np.float32)
     return v / np.maximum(np.linalg.norm(v, axis=1, keepdims=True), 1e-9)
 
 

@@ -315,6 +315,12 @@ async def process(client, msg, done: set):
     if msg.message_id in done:
         return
     done.add(msg.message_id)
+    # mark handled before any work: if the process dies mid-request (e.g. killed), a restart must not
+    # re-answer this email. At-most-once beats a sender getting the same reply on every restart.
+    try:
+        await client.inboxes.messages.update(INBOX, msg.message_id, add_labels=["processed"])
+    except Exception as e:
+        print("  label failed:", e)
     try:
         await handle(client, msg)
     except Exception as e:
@@ -325,10 +331,6 @@ async def process(client, msg, done: set):
         except Exception:
             pass
     finally:
-        try:
-            await client.inboxes.messages.update(INBOX, msg.message_id, add_labels=["processed"])
-        except Exception as e:
-            print("  label failed:", e)
         lf.flush()
 
 async def main():
