@@ -16,7 +16,7 @@ _embedder = None
 
 
 def _db() -> sqlite3.Connection:
-    path = Path(os.environ.get("SEARCH_DB", HERE / "downloads" / "search.db"))
+    path = Path(os.environ.get("SEARCH_DB") or HERE / "downloads" / "search.db")
     path.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(path)
     con.execute("""CREATE TABLE IF NOT EXISTS chunks (
@@ -173,7 +173,9 @@ def main(argv: list):
         pass
     if not argv:
         print(__doc__)
-    elif argv[0] == "index" and len(argv) > 1:
+    elif argv[0] == "index":
+        if len(argv) == 1:
+            print(__doc__)
         for t in argv[1:]:
             print(f"{t}: {_index_path(Path(t))} chunks")
     elif argv[0] == "--matters":

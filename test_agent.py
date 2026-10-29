@@ -27,8 +27,8 @@ def test_count_phrase():
 
 
 def test_first_name():
-    assert first_name('"Paula Prado" <paula.prado@senpilot.com>') == "Paula"
-    assert first_name("paula.prado@senpilot.com") == "Paula"
+    assert first_name('"Jane Doe" <jane.doe@example.com>') == "Jane"
+    assert first_name("jane.doe@example.com") == "Jane"
 
 
 def test_compose_spec_shape():

@@ -105,7 +105,7 @@ Direction, not built. Each item says what it is today and what would replace it.
 The challenge frames this agent as the data ingestion side of a Regulatory Agent: the searchable database under its research, where an analyst looks for examples, precedents and approval patterns in past cases. `search.py` is that layer. It indexes every scraped matter (the saved metadata plus the text of the downloaded filings) into a local database, so one question can be asked across all matters at once instead of one email per matter. The agent indexes every matter it fetches, right before the download folder is deleted.
 
 ```bash
-python search.py index downloads/M12205_1793235393   # a saved matter folder, or its M12205.json
+python search.py index downloads/M12205_1793235393   # a saved matter folder (needs downloads/M12205.json)
 python search.py "what did the Board decide about the Windsor Street Exchange costs?"
 python search.py --matters                           # indexed matters and chunk counts
 ```
@@ -126,7 +126,7 @@ directed in the Decision, subject to a Compliance Filing ...
 How it works:
 - Each filing's first 30 pages are split into overlapping 800-character chunks, plus one chunk per matter for its metadata (title, type, category, status, counts).
 - Chunks are embedded locally with fastembed (`BAAI/bge-small-en-v1.5`, no API key) and stored in SQLite at `downloads/search.db` (or `SEARCH_DB`).
-- A question is embedded the same way and ranked by cosine similarity; Claude answers only from the top excerpts and cites each fact as `[M12205 · 02 Board Order (102674) p.3]`.
+- A question is embedded the same way and ranked by cosine similarity; Claude answers only from the top excerpts and cites each fact as `[M12205 · 06 Board Order (102674) p.1]`.
 
 ## Built with
 
